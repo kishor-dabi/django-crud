@@ -1,10 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from app.forms import UserForm, UserProfileInfoForm
 from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
 from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
+from .forms import LoginForm
+from django.contrib.auth.models import User
+from django.views.generic import FormView, RedirectView, ListView
 # Create your views here.
 
 
@@ -71,3 +75,58 @@ def user_login(request):
             return HttpResponse("Invalid login details given")
     else:
         return render(request, 'app/login.html', {})
+
+
+class UserLogin(FormView):
+
+    form_class = LoginForm
+    template_name = 'app/login.html'
+
+    # def get(self, request):
+    #     form = self.form_class(None)
+    #     return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = self.form_class(request.POST)
+        username = request.POST.get('email')
+        password = request.POST.get('password')
+        print(username, password)
+
+        if form.is_valid():
+
+            # storing the data but NOT SAVING them to db yet
+            user = form.save(commit=False)
+
+            # if credentials are correct, this returns a user object
+            user = authenticate(username=username, password=password)
+            print(form, '----------', user)
+
+            if user is not None:
+
+                if user.is_active:
+                    login(request, user)
+                    return redirect('index')
+            else:
+
+                messages.error(request, "Enter valid email and password")
+        print(form, user)
+        return redirect('app:user_login')
+
+    def get(self, request):
+        form = self.form_class(None)
+        return render(request, self.template_name, {'form': form})
+
+
+class Dashboard(ListView):
+    model = User
+    template_name = 'app/dashboard.html'
+
+    def get(self, request):
+        users = User.objects.all()
+        print(users.count(), "--------", users.values())
+        response_data = {"users": users}
+        if users.count() == 0:
+            user_message = "No record Found"
+            response_data['message'] = user_message
+
+        return render(request, self.template_name, response_data)

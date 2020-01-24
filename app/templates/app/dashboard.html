@@ -1,0 +1,19 @@
+{% extends 'app/base.html' %}
+{% block body_block %}
+  <div class="container">
+    <div class="jumbotron">
+        {% if message %}
+            {{ message }}
+        {% else %}
+            Users are : {{ users|length }}<br>
+            {% for user in users %}
+                User: {{ user }}
+                User: {{ user.password }}
+                User: {{ user.first_name  }}
+                User: {{ user.last_name  }}
+            {% endfor %}
+        {% endif %}
+
+    </div>
+  </div>
+{% endblock %}
