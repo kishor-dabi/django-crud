@@ -1,6 +1,6 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
-from app.forms import UserForm, UserProfileInfoForm
+from app.forms import UserForm, UserProfileInfoForm, UserProfileForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.http import HttpResponseRedirect, HttpResponse
@@ -8,7 +8,9 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from .forms import LoginForm
 from django.contrib.auth.models import User
-from django.views.generic import FormView, RedirectView, ListView
+from django.views.generic import FormView, RedirectView, ListView, DetailView
+from django.views.generic.edit import UpdateView
+
 # Create your views here.
 
 
@@ -130,3 +132,51 @@ class Dashboard(ListView):
             response_data['message'] = user_message
 
         return render(request, self.template_name, response_data)
+
+
+class ProfileView(UpdateView):
+    model = User
+    template_name = 'app/my_profile.html'
+    object = None
+
+    user_form = UserProfileForm()
+    profile_image_form = UserProfileInfoForm()
+
+    def get(self, request, **kwargs):
+
+        user = get_object_or_404(User, pk=request.session.get('_auth_user_id'))
+        # user = User.objects.filter(pk=request.session.get('_auth_user_id'))
+        # print(self.user_form, profile_image_form)
+        response_data = {"users": request.session}
+        # if users.count() == 0:
+        #     user_message = "No record Found"
+        #     response_data['message'] = user_message
+        print(request.session.get('_auth_user_id'), user)
+        user_form = UserProfileForm(instance=user)
+        profile_image_form = UserProfileInfoForm()
+        # return self.render_to_response(self.get_context_data(
+        #     object=self.object, user_form=user_form, profile_image_form=profile_image_form))
+
+        return render(request, self.template_name, {'user_form': user_form, 'profile_image_form': profile_image_form})
+
+    def post(self, request):
+        user_form = UserProfileForm(data=request.POST)
+        profile_form = UserProfileInfoForm(data=request.POST)
+        # print(user_form.is_valid(), profile_form.is_valid(), user_form, profile_form)
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save(commit=False)
+            user['id'] = request.session.get('_auth_user_id')
+            # user.set_password(user.password)
+            print(user, "------------------------------")
+            user.update()
+            profile = profile_form.save(commit=False)
+            profile.user = user
+            if 'profile_pic' in request.FILES:
+                print('found it')
+                profile.profile_pic = request.FILES['profile_pic']
+            profile.save()
+            return render(request, self.template_name, {'messages': "Update Successfully"})
+        else:
+            return render(request, self.template_name, {'user_form': self.user_form,
+                                                        'profile_image_form': self.profile_image_form,
+                                                        'messages': "Please fill all fields"})

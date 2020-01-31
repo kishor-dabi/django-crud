@@ -10,7 +10,7 @@
         {% if messages %}
             <ul class="messages">
                 {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
                 {% endfor %}
             </ul>
         {% endif %}
@@ -21,7 +21,7 @@
 <!--<label for="password">Password:</label>-->
 <!--          <input type="password" name="password" placeholder="Password">-->
 <!--    #}-->
-<input type="submit" name="" value="Login">
+<input type="submit" class="btn" name="" value="Login">
 </form>
 </div>
   </div>

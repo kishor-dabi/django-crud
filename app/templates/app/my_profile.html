@@ -1,0 +1,33 @@
+{% extends "app/base.html" %}
+{% load staticfiles %}
+{% block body_block %}
+  <div class="container">
+
+    <div class="jumbotron">
+      {% if messages %}
+        <h1>{{messages}}</h1>
+
+      {% endif %}
+        <h1>Update Profile</h1>
+<form enctype="multipart/form-data" name="profileForm" onsubmit="return validateForm()" method="POST">
+          {% csrf_token %}
+          {{ user_form.as_p }}
+          {{ profile_image_form.as_p }}
+
+          <input type="submit" name="" value="Update">
+        </form>
+
+    </div>
+  </div>
+
+<script>
+
+    function validateForm(){
+        var form = document.forms["profileForm"]
+        console.log(form, form.valid());
+        return false;
+    }
+</script>
+{% endblock %}
+
+
