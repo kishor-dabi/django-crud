@@ -10,7 +10,12 @@ from .forms import LoginForm
 from django.contrib.auth.models import User
 from django.views.generic import FormView, RedirectView, ListView, DetailView
 from django.views.generic.edit import UpdateView
-
+from .models import UserProfileInfo
+# import logging
+#
+# l = logging.getLogger('django.db.backends')
+# l.setLevel(logging.DEBUG)
+# l.addHandler(logging.StreamHandler())
 # Create your views here.
 
 
@@ -37,26 +42,27 @@ def register(request):
         user_form = UserForm(data=request.POST)
         profile_form = UserProfileInfoForm(data=request.POST)
         if user_form.is_valid() and profile_form.is_valid():
-            user = user_form.save()
+            user = user_form.save(commit=False)
+            user.email = user.username;
             user.set_password(user.password)
             print(user)
             user.save()
             profile = profile_form.save(commit=False)
             profile.user = user
-            if 'profile_pic' in request.FILES:
-                print('found it')
-                profile.profile_pic = request.FILES['profile_pic']
+            # if 'profile_pic' in request.FILES:
+            #     print('found it')
+            #     profile.profile_pic = request.FILES['profile_pic']
             profile.save()
             registered = True
         else:
             print(user_form.errors, profile_form.errors)
     else:
         user_form = UserForm()
-        profile_form = UserProfileInfoForm()
+        # profile_form = UserProfileInfoForm()
         attrs = {'class': 'form-control'}
     return render(request, 'app/register.html',
                           {'user_form': user_form,
-                           'profile_form': profile_form,
+                           # 'profile_form': profile_form,
                            'registered': registered})
 
 
@@ -144,7 +150,9 @@ class ProfileView(UpdateView):
 
     def get(self, request, **kwargs):
 
+        print(request.session.get('_auth_user_id'))
         user = get_object_or_404(User, pk=request.session.get('_auth_user_id'))
+        userProfile = get_object_or_404(UserProfileInfo, user_id=request.session.get('_auth_user_id'))
         # user = User.objects.filter(pk=request.session.get('_auth_user_id'))
         # print(self.user_form, profile_image_form)
         response_data = {"users": request.session}
@@ -153,30 +161,38 @@ class ProfileView(UpdateView):
         #     response_data['message'] = user_message
         print(request.session.get('_auth_user_id'), user)
         user_form = UserProfileForm(instance=user)
-        profile_image_form = UserProfileInfoForm()
+        profile_image_form = UserProfileInfoForm(instance=userProfile)
         # return self.render_to_response(self.get_context_data(
         #     object=self.object, user_form=user_form, profile_image_form=profile_image_form))
 
         return render(request, self.template_name, {'user_form': user_form, 'profile_image_form': profile_image_form})
 
     def post(self, request):
-        user_form = UserProfileForm(data=request.POST)
-        profile_form = UserProfileInfoForm(data=request.POST)
-        # print(user_form.is_valid(), profile_form.is_valid(), user_form, profile_form)
-        if user_form.is_valid() and profile_form.is_valid():
-            user = user_form.save(commit=False)
-            user['id'] = request.session.get('_auth_user_id')
+        # user_form = UserProfileForm(data=request.POST)
+        profile_form = UserProfileInfoForm(request.POST)
+        print(profile_form.is_valid(), profile_form)
+        if profile_form.is_valid():
+            # user = user_form.save(commit=False)
+            # user['id'] = request.session.get('_auth_user_id')
             # user.set_password(user.password)
-            print(user, "------------------------------")
-            user.update()
+            # print(user, "------------------------------")
+            # user.update()
+            # profile.user = request.user#.get('_auth_user_id')
+            # user = get_object_or_404(User, pk=request.session.get('_auth_user_id'))
+            # print(profile_form)
+
             profile = profile_form.save(commit=False)
-            profile.user = user
+            # profile.user_id = request.user
+            profileObj = get_object_or_404(UserProfileInfo, user_id=request.session.get('_auth_user_id'))
+            profile.user_id = request.session.get('_auth_user_id')
+            profile.id = profileObj.id
+            print(profile, "+++++++++++++++++++++++++++++++")
             if 'profile_pic' in request.FILES:
                 print('found it')
                 profile.profile_pic = request.FILES['profile_pic']
             profile.save()
-            return render(request, self.template_name, {'messages': "Update Successfully"})
+            return render(request, self.template_name, {'messages': "Update Successfully", "isUpdate": True})
         else:
             return render(request, self.template_name, {'user_form': self.user_form,
                                                         'profile_image_form': self.profile_image_form,
-                                                        'messages': "Please fill all fields"})
+                                                        'messages': "Please fill all fields", "isUpdate": False})

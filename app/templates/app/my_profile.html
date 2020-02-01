@@ -1,22 +1,26 @@
 {% extends "app/base.html" %}
-{% load staticfiles %}
 {% block body_block %}
   <div class="container">
 
     <div class="jumbotron">
-      {% if messages %}
+    {% if messages %}
         <h1>{{messages}}</h1>
+        <a class="btn" href="{% url 'index' %}">Back to Home</a>
+    {% endif %}
 
-      {% endif %}
+      {% if isUpdate %}
+<!--        <h1>{{messages}}</h1>-->
+
+      {% else %}
         <h1>Update Profile</h1>
 <form enctype="multipart/form-data" name="profileForm" onsubmit="return validateForm()" method="POST">
           {% csrf_token %}
-          {{ user_form.as_p }}
+<!--          {{ user_form.as_p }}-->
           {{ profile_image_form.as_p }}
 
           <input type="submit" name="" value="Update">
         </form>
-
+    {% endif %}
     </div>
   </div>
 
